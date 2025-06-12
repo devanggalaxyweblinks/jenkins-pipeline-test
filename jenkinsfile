@@ -1,11 +1,29 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'develop', description: 'Branch to build and deploy')
+    }
+
     stages {
         stage('Debug Branch Info') {
             steps {
                 script {
-                    echo "Branch Name: ${env.BRANCH_NAME}"
+                    // Try multiple methods to get branch name
+                    echo "Selected branch: ${params.BRANCH_NAME}"
+                    echo "BRANCH_NAME from env: ${env.BRANCH_NAME}"
+                    echo "GIT_BRANCH from env: ${env.GIT_BRANCH}"
+                    echo "CHANGE_BRANCH from env: ${env.CHANGE_BRANCH}"
+                    
+                    // Use git commands to get branch info
+                    sh '''
+                        echo "Git branch from command:"
+                        git branch --show-current
+                        echo "Git status:"
+                        git status
+                        echo "Git remote info:"
+                        git remote -v
+                    '''
                 }
             }
         }
@@ -17,7 +35,7 @@ pipeline {
                         deleteDir()
                         checkout([
                             $class: 'GitSCM',
-                            branches: [[name: '*/develop']],
+                            branches: [[name: "*/${params.BRANCH_NAME}"]],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -54,49 +72,66 @@ pipeline {
         }
 
         stage('Merge to Develop') {
-            when {
-                branch 'develop'
-            }
             steps {
                 script {
-                    echo 'Hello World'
+                    def currentBranch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    echo "Current branch is: ${currentBranch}"
+                    
+                    if (currentBranch == 'develop' || params.BRANCH_NAME == 'develop') {
+                        echo "Running on develop branch - proceeding with merge"
+                        // Add your merge logic here
+                        sh """
+                            git config --global user.email 'jenkins@example.com'
+                            git config --global user.name 'Jenkins'
+                            git checkout develop
+                            git status
+                        """
+                    } else {
+                        echo "Not on develop branch - skipping merge"
+                    }
                 }
             }
         }
 
         stage('Merge to QA') {
-            when {
-                branch 'release'
-            }
             steps {
                 script {
-                    echo 'Hello World'
+                    if (params.BRANCH_NAME == 'release') {
+                        echo "Running on release branch - proceeding with QA merge"
+                        // Add your QA merge logic here
+                    } else {
+                        echo "Not on release branch - skipping QA merge"
+                    }
                 }
             }
         }
 
         stage('Merge to UAT') {
-            when {
-                branch 'UAT'
-            }
             steps {
                 script {
-                    echo 'Hello World'
+                    if (params.BRANCH_NAME == 'UAT') {
+                        echo "Running on UAT branch - proceeding with UAT merge"
+                        // Add your UAT merge logic here
+                    } else {
+                        echo "Not on UAT branch - skipping UAT merge"
+                    }
                 }
             }
         }
 
         stage('Merge to Production') {
-            when {
-                branch 'main'
-            }
-            input {
-                message "Do you want to proceed with the production deployment?"
-                ok "Yes, proceed"
-            }
             steps {
                 script {
-                    echo 'Hello World'
+                    if (params.BRANCH_NAME == 'main') {
+                        // Production deployment requires approval
+                        input message: 'Do you want to proceed with the production deployment?',
+                              ok: 'Yes, proceed'
+                        
+                        echo "Approved - proceeding with production merge"
+                        // Add your production merge logic here
+                    } else {
+                        echo "Not on main branch - skipping production merge"
+                    }
                 }
             }
         }
