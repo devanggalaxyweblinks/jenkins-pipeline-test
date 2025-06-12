@@ -2,30 +2,28 @@ pipeline {
     agent any
 
     stages {
-    stage('Checkout') {
-        steps {
-            script {
-                try {
-                    // Clean workspace before checkout
-                    deleteDir()
-                    // Perform the checkout with credentials (default branch)
-                    checkout([
-                        $class: 'GitSCM',
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [],
-                        submoduleCfg: [],
-                        userRemoteConfigs: [[
-                            url: 'https://github.com/devanggalaxyweblinks/jenkins-pipeline-test.git',
-                            credentialsId: 'github-credentialsgwl'  // Add your Jenkins credentials ID here
-                        ]]
-                    ])
-                } catch (Exception e) {
-                    error "Failed to checkout repository: ${e.getMessage()}"
+        stage('Checkout') {
+            steps {
+                script {
+                    try {
+                        deleteDir()
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: '*/develop']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                url: 'https://github.com/devanggalaxyweblinks/jenkins-pipeline-test.git',
+                                credentialsId: 'github-credentials'
+                            ]]
+                        ])
+                    } catch (Exception e) {
+                        error "Failed to checkout repository: ${e.getMessage()}"
+                    }
                 }
             }
         }
-    }
-}
 
         stage('Build') {
             steps {
