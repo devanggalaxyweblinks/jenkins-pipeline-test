@@ -1,0 +1,110 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    try {
+                        // Clean workspace before checkout
+                        deleteDir()
+                        // Perform the checkout with credentials
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: '*/develop']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                url: '',
+                                credentialsId: 'github-credentialsgwl'  // Add your Jenkins credentials ID here
+                            ]]
+                        ])
+                    } catch (Exception e) {
+                        error "Failed to checkout repository: ${e.getMessage()}"
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    try {
+                        echo 'Build commands will be added here'
+                    } catch (Exception e) {
+                        error "Build failed: ${e.getMessage()}"
+                    }
+                }
+            }
+        }
+
+        stage('Push') {
+            steps {
+                script {
+                    echo 'Hello World'
+                }
+            }
+        }
+
+        stage('Merge to Develop') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                script {
+                    echo 'Hello World'
+                }
+            }
+        }
+
+        stage('Merge to QA') {
+            when {
+                branch 'release'
+            }
+            steps {
+                script {
+                    echo 'Hello World'
+                }
+            }
+        }
+
+        stage('Merge to UAT') {
+            when {
+                branch 'UAT'
+            }
+            steps {
+                script {
+                    echo 'Hello World'
+                }
+            }
+        }
+
+        stage('Merge to Production') {
+            when {
+                branch 'main'
+            }
+            input {
+                message "Do you want to proceed with the production deployment?"
+                ok "Yes, proceed"
+            }
+            steps {
+                script {
+                    echo 'Hello World'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+    }
+}
