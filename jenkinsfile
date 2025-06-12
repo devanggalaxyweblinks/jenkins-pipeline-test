@@ -1,6 +1,17 @@
 pipeline {
     agent any
 
+
+       stages {
+        stage('Debug Branch Info') {
+            steps {
+                script {
+                    echo "Branch Name: ${env.BRANCH_NAME}"
+                }
+            }
+        }
+
+
     stages {
         stage('Checkout') {
             steps {
